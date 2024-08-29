@@ -1,4 +1,4 @@
-from .basic import Sphere, Line, Arrow
+from .basic import Sphere, Line, Arrow, Disk
 
 import numpy as np
 
@@ -8,7 +8,7 @@ class Uav:
     Draws a quadrotor at a given position, with a given attitude.
     '''
 
-    def __init__(self, ax, arm_length):
+    def __init__(self, ax, arm_length,tilt_angle=0.0):
         '''
         Initialize the quadrotr plotting parameters.
 
@@ -31,15 +31,19 @@ class Uav:
         self.body = Sphere(self.ax, 0.08, 'y')
 
         # Each motor
-        self.motor1 = Sphere(self.ax, 0.05, 'r')
-        self.motor2 = Sphere(self.ax, 0.05, 'g')
-        self.motor3 = Sphere(self.ax, 0.05, 'b')
-        self.motor4 = Sphere(self.ax, 0.05, 'b')
+        self.motorTiltR = np.array([
+        [np.cos(tilt_angle), 0, np.sin(tilt_angle)],
+        [0, 1, 0],
+        [-np.sin(tilt_angle), 0, np.cos(tilt_angle)]])
+        self.motor1 = Disk(self.ax, r=0.1, h=0, c=(1, 0, 0, 0.7), R=self.motorTiltR)
+        self.motor2 = Disk(self.ax, r=0.1, h=0, c=(0, 1, 0, 0.7), R=self.motorTiltR)
+        self.motor3 = Disk(self.ax, r=0.1, h=0, c=(1, 0, 0, 0.7), R=self.motorTiltR)
+        self.motor4 = Disk(self.ax, r=0.1, h=0, c=(0, 1, 0, 0.7), R=self.motorTiltR)
 
         # Arrows for the each body axis
-        self.arrow_b1 = Arrow(ax, self.b1, 'r')
-        self.arrow_b2 = Arrow(ax, self.b2, 'g')
-        self.arrow_b3 = Arrow(ax, self.b3, 'b')
+        self.arrow_b1 = Arrow(ax, self.b1,  (1, 0, 0, 0.5))
+        self.arrow_b2 = Arrow(ax, self.b2,  (0, 1, 0, 0.5))
+        self.arrow_b3 = Arrow(ax, self.b3,  (0, 0, 1, 0.5))
 
         # Quadrotor arms
         self.arm_b1 = Line(ax)
@@ -64,22 +68,25 @@ class Uav:
         self.ax.clear()
 
         # Center of the quadrotor
-        self.body.draw_at(x)
+        # self.body.draw_at(x)
+
 
         # Each motor
-        self.motor1.draw_at(x + R.dot(self.b1) * self.arm_length)
-        self.motor2.draw_at(x + R.dot(self.b2) * self.arm_length)
-        self.motor3.draw_at(x + R.dot(-self.b1) * self.arm_length)
-        self.motor4.draw_at(x + R.dot(-self.b2) * self.arm_length)
+        motor_pos = self.arm_length*(2**0.5)
+        self.motor1.draw_at(x + R.dot(np.array([motor_pos, -motor_pos, 0]).T) * self.arm_length, R=R)
+        self.motor2.draw_at(x + R.dot(np.array([-motor_pos, -motor_pos, 0]).T) * self.arm_length, R=R)
+        self.motor3.draw_at(x + R.dot(np.array([-motor_pos, +motor_pos, 0]).T) * self.arm_length, R=R)
+        self.motor4.draw_at(x + R.dot(np.array([motor_pos,motor_pos, 0]).T) * self.arm_length, R=R)
+   
 
         # Arrows for the each body axis
-        self.arrow_b1.draw_from_to(x, R.dot(self.b1) * self.arm_length * 1.8)
-        self.arrow_b2.draw_from_to(x, R.dot(self.b2) * self.arm_length * 1.8)
-        self.arrow_b3.draw_from_to(x, R.dot(self.b3) * self.arm_length * 1.8)
+        self.arrow_b1.draw_from_to(x, (self.b1).dot(R.T) * self.arm_length )
+        self.arrow_b2.draw_from_to(x, (self.b2).dot(R.T) * self.arm_length )
+        self.arrow_b3.draw_from_to(x, (self.b3).dot(R.T) * self.arm_length )
 
         # Quadrotor arms
-        self.arm_b1.draw_from_to(x, x + R.dot(-self.b1) * self.arm_length)
-        self.arm_b2.draw_from_to(x, x + R.dot(-self.b2) * self.arm_length)
+        self.arm_b1.draw_from_to(x + R.dot(np.array([motor_pos, -motor_pos, 0]).T) * self.arm_length, x + R.dot(np.array([-motor_pos, +motor_pos, 0]).T) * self.arm_length)
+        self.arm_b2.draw_from_to(x + R.dot(np.array([-motor_pos, -motor_pos, 0]).T) * self.arm_length, x + R.dot(np.array([motor_pos,motor_pos, 0]).T) * self.arm_length)
 
 
 

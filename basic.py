@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from mpl_toolkits.mplot3d import Axes3D
-
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from .utils import ypr_to_R
 
 
@@ -152,7 +152,99 @@ class Arrow:
             length=self.arrow_length, \
             normalize=False)
 
+class Disk:
+    '''
+    Draws a round disk at a given position with a specified height.
+    '''
 
+    def __init__(self, ax, r, h, c='b', x0=np.array([0, 0, 0]).T, R=None, resolution=20):
+        '''
+        Initialize the disk.
+
+        Params:
+            ax: (matplotlib axis) the axis where the disk should be drawn
+            r: (float) radius of the disk
+            h: (float) height of the disk
+            c: (string) color of the disk, default 'b'
+            x0: (3x1 numpy.ndarray) initial position of the disk, default
+                is [0, 0, 0]
+            R: (3x3 numpy.ndarray) rotation matrix for orienting the disk,
+                default is None (no rotation)
+            resolution: (int) resolution of the plot, default 20
+
+        Returns:
+            None
+        '''
+
+        self.ax = ax
+        self.r = r
+        self.h = h
+        self.color = c
+        self.x0 = x0
+        self.R = R if R is not None else np.eye(3)  # Default to identity matrix if R is not provided
+        self.reso = resolution
+    
+
+    def draw(self):
+        '''
+        Draw the disk with the initially defined position and rotation matrix
+        when the class was instantiated.
+
+        Args:
+            None
+        
+        Returns:
+            None
+        '''
+
+        # Create a range of angles for drawing the disk
+        angles = np.linspace(0, 2 * np.pi, self.reso + 1)
+
+        # Calculate the x and y coordinates for the points on the disk
+        x = self.r * np.cos(angles)
+        y = self.r * np.sin(angles)
+        z = np.full_like(x, self.h,dtype=float)
+
+        # Create the vertices for the disk by repeating x and y coordinates
+        vertices = np.column_stack((x, y, z))
+        
+        rotated_vertices = np.dot(vertices, self.R.T)
+        # Create a list of polygons to represent the disk
+        polygons = [list(zip(rotated_vertices[:, 0]+self.x0[0], rotated_vertices[:, 1]+self.x0[1], rotated_vertices[:, 2])+self.x0[2])]
+        # Plot the disk as a Poly3DCollection
+        self.ax.add_collection3d(Poly3DCollection(polygons, color=self.color, closed=True))
+
+    def draw_at(self, position=np.array([0.0, 0.0, 0.0]).T, R=None):
+        '''
+        Draw the disk at a given position with an optional rotation matrix.
+
+        Args:
+            position: (3x1 numpy.ndarray) position of the disk, 
+                default = [0.0, 0.0, 0.0]
+            R: (3x3 numpy.ndarray) rotation matrix for orienting the disk,
+                default is None (no rotation)
+        
+        Returns:
+            None
+        '''
+
+        # Create a range of angles for drawing the disk
+        angles = np.linspace(0, 2 * np.pi, self.reso + 1)
+
+        # Calculate the x and y coordinates for the points on the disk
+        x = self.r * np.cos(angles)
+        y = self.r * np.sin(angles)
+        z = np.full_like(x, self.h,dtype=float)
+
+        # Create the vertices for the disk by repeating x and y coordinates
+        vertices = np.column_stack((x, y, z))
+        rotated_vertices = np.dot(vertices, self.R.T)
+        if R is not None:
+            rotated_vertices = np.dot(rotated_vertices, R.T)
+        # Create a list of polygons to represent the disk
+        polygons = [list(zip(rotated_vertices[:, 0]+position[0], rotated_vertices[:, 1]+position[1], rotated_vertices[:, 2]+position[2]))]
+        # Plot the disk as a Poly3DCollection
+        self.ax.add_collection3d(Poly3DCollection(polygons, color=self.color, closed=True))
 
 class Line:
     '''
